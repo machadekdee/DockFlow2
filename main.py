@@ -26,20 +26,31 @@ st.set_page_config(
 )
 
 # Setup Thai font for Matplotlib to prevent tofu [?] boxes
-thai_font_candidates = [
-    "Tahoma",
-    "Leelawadee UI",
-    "Leelawadee",
-    "Angsana New",
-    "Cordia New",
-    "TH Sarabun New",
-    "Noto Sans Thai",
-]
-installed_fonts = {f.name for f in fm.fontManager.ttflist}
-selected_thai_font = next((f for f in thai_font_candidates if f in installed_fonts), "sans-serif")
+thai_font_file = Path(__file__).parent / "Sarabun-Regular.ttf"
+if thai_font_file.exists():
+    try:
+        fm.fontManager.addfont(str(thai_font_file))
+        selected_thai_font = "Sarabun"
+    except Exception:
+        selected_thai_font = "sans-serif"
+else:
+    thai_font_candidates = [
+        "Sarabun",
+        "Loma",
+        "Garuda",
+        "Tahoma",
+        "Leelawadee UI",
+        "Leelawadee",
+        "Angsana New",
+        "Cordia New",
+        "TH Sarabun New",
+        "Noto Sans Thai",
+    ]
+    installed_fonts = {f.name for f in fm.fontManager.ttflist}
+    selected_thai_font = next((f for f in thai_font_candidates if f in installed_fonts), "sans-serif")
 
-mpl.rcParams["font.family"] = "sans-serif"
-mpl.rcParams["font.sans-serif"] = [selected_thai_font, "Tahoma", "Leelawadee UI", "Segoe UI", "DejaVu Sans"]
+mpl.rcParams["font.family"] = selected_thai_font if selected_thai_font != "sans-serif" else "sans-serif"
+mpl.rcParams["font.sans-serif"] = [selected_thai_font, "Sarabun", "Loma", "Garuda", "Tahoma", "Leelawadee UI", "DejaVu Sans"]
 mpl.rcParams["axes.unicode_minus"] = False
 
 DB_FILE = Path(__file__).with_name("dockflow_complete.db")
