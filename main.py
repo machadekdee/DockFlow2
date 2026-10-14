@@ -283,15 +283,28 @@ def initialize_database():
             if col_name not in existing_pallet_cols:
                 conn.execute(f"ALTER TABLE pallets ADD COLUMN {col_name} {col_type}")
 
-        # Ensure existing demo trucks have plate/carrier populated
-        conn.execute("UPDATE trucks SET plate = '70-1122 กทม.', carrier = 'SCG Logistics', driver_name = 'สมชาย ใจซื่อ', driver_phone = '081-234-5678', truck_type = '6 ล้อตู้แห้ง' WHERE id = 'T01' AND (plate IS NULL OR plate = '')")
-        conn.execute("UPDATE trucks SET plate = '70-3344 กทม.', carrier = 'Flash Express', driver_name = 'สมเกียรติ มั่นคง', driver_phone = '089-876-5432', truck_type = '6 ล้อตู้แห้ง' WHERE id = 'T02' AND (plate IS NULL OR plate = '')")
-        conn.execute("UPDATE trucks SET plate = '71-5566 ชลบุรี', carrier = 'Linfox Thailand', driver_name = 'อนุชา รวดเร็ว', driver_phone = '086-555-1234', truck_type = '6 ล้อตู้ทึบ' WHERE id = 'T03' AND (plate IS NULL OR plate = '')")
-        conn.execute("UPDATE trucks SET plate = '70-7788 กทม.', carrier = 'DOCKFLOW Fleet', driver_name = 'วิชัย ส่งมอบ', driver_phone = '082-444-9988', truck_type = '6 ล้อตู้แห้ง' WHERE id = 'T04' AND (plate IS NULL OR plate = '')")
-        conn.execute("UPDATE trucks SET plate = '72-9900 นนทบุรี', carrier = 'Kerry Logistics', driver_name = 'ธีระ ขยันยิ่ง', driver_phone = '085-111-2233', truck_type = '6 ล้อตู้แห้ง' WHERE id = 'T05' AND (plate IS NULL OR plate = '')")
-        conn.execute("UPDATE trucks SET plate = '1ฒผ-4455 กทม.', carrier = 'DOCKFLOW Fleet', driver_name = 'บุญรอด ขับปลอดภัย', driver_phone = '083-777-6655', truck_type = '4 ล้อตู้ทึบ' WHERE id = 'T06' AND (plate IS NULL OR plate = '')")
-        conn.execute("UPDATE trucks SET plate = '73-1234 สระบุรี', carrier = 'SCG Logistics', driver_name = 'ประสิทธิ์ ชำนาญทาง', driver_phone = '087-999-0011', truck_type = '10 ล้อตู้ทึบ' WHERE id = 'T07' AND (plate IS NULL OR plate = '')")
-        conn.execute("UPDATE trucks SET plate = '70-6677 ปทุมธานี', carrier = 'รถร่วมบริการ', driver_name = 'มานะ ตรงเวลา', driver_phone = '084-222-3344', truck_type = '6 ล้อตู้แห้ง' WHERE id = 'T08' AND (plate IS NULL OR plate = '')")
+        # Ensure existing demo trucks have plate/carrier and realistic logistics capacities populated
+        fleet_upgrades = [
+            ("T01", 8, 8000.0, "6 ล้อตู้แห้ง", "70-1122 กทม.", "SCG Logistics", "สมชาย ใจซื่อ", "081-234-5678"),
+            ("T02", 8, 8000.0, "6 ล้อตู้แห้ง", "70-3344 กทม.", "Flash Express", "สมเกียรติ มั่นคง", "089-876-5432"),
+            ("T03", 8, 8500.0, "6 ล้อตู้ทึบ", "71-5566 ชลบุรี", "Linfox Thailand", "อนุชา รวดเร็ว", "086-555-1234"),
+            ("T04", 8, 8000.0, "6 ล้อตู้แห้ง", "70-7788 กทม.", "DOCKFLOW Fleet", "วิชัย ส่งมอบ", "082-444-9988"),
+            ("T05", 8, 8500.0, "6 ล้อตู้แห้ง", "72-9900 นนทบุรี", "Kerry Logistics", "ธีระ ขยันยิ่ง", "085-111-2233"),
+            ("T06", 4, 3500.0, "4 ล้อตู้ทึบ", "1ฒผ-4455 กทม.", "DOCKFLOW Fleet", "บุญรอด ขับปลอดภัย", "083-777-6655"),
+            ("T07", 12, 15000.0, "10 ล้อตู้ทึบ", "73-1234 สระบุรี", "SCG Logistics", "ประสิทธิ์ ชำนาญทาง", "087-999-0011"),
+            ("T08", 8, 8000.0, "6 ล้อตู้แห้ง", "70-6677 ปทุมธานี", "รถร่วมบริการ", "มานะ ตรงเวลา", "084-222-3344"),
+        ]
+        for tid, sl, mw, tt, pl, cr, dn, dp in fleet_upgrades:
+            conn.execute(
+                """
+                UPDATE trucks 
+                SET slots = ?, max_weight = ?, truck_type = ?, plate = COALESCE(NULLIF(plate, ''), ?),
+                    carrier = COALESCE(NULLIF(carrier, ''), ?), driver_name = COALESCE(NULLIF(driver_name, ''), ?),
+                    driver_phone = COALESCE(NULLIF(driver_phone, ''), ?)
+                WHERE id = ? AND (max_weight = 3000 OR max_weight = 1800 OR max_weight = 4500 OR plate IS NULL OR plate = '')
+                """,
+                (sl, mw, tt, pl, cr, dn, dp, tid)
+            )
 
         # Ensure existing demo pallets have lot/exp populated if null
         today = datetime.now()
@@ -326,14 +339,14 @@ def reset_demo_data():
         conn.executemany("INSERT INTO products VALUES (?, ?, ?, ?)", products)
 
         trucks_data = [
-            ("T01", "TRUCK 01", 6, 3000, "70-1122 กทม.", "SCG Logistics", "สมชาย ใจซื่อ", "081-234-5678", "6 ล้อตู้แห้ง"),
-            ("T02", "TRUCK 02", 6, 3000, "70-3344 กทม.", "Flash Express", "สมเกียรติ มั่นคง", "089-876-5432", "6 ล้อตู้แห้ง"),
-            ("T03", "TRUCK 03", 6, 3000, "71-5566 ชลบุรี", "Linfox Thailand", "อนุชา รวดเร็ว", "086-555-1234", "6 ล้อตู้ทึบ"),
-            ("T04", "TRUCK 04", 6, 3000, "70-7788 กทม.", "DOCKFLOW Fleet", "วิชัย ส่งมอบ", "082-444-9988", "6 ล้อตู้แห้ง"),
-            ("T05", "TRUCK 05", 6, 3000, "72-9900 นนทบุรี", "Kerry Logistics", "ธีระ ขยันยิ่ง", "085-111-2233", "6 ล้อตู้แห้ง"),
-            ("T06", "TRUCK 06", 4, 1800, "1ฒผ-4455 กทม.", "DOCKFLOW Fleet", "บุญรอด ขับปลอดภัย", "083-777-6655", "4 ล้อตู้ทึบ"),
-            ("T07", "TRUCK 07", 8, 4500, "73-1234 สระบุรี", "SCG Logistics", "ประสิทธิ์ ชำนาญทาง", "087-999-0011", "10 ล้อตู้ทึบ"),
-            ("T08", "TRUCK 08", 6, 3000, "70-6677 ปทุมธานี", "รถร่วมบริการ", "มานะ ตรงเวลา", "084-222-3344", "6 ล้อตู้แห้ง"),
+            ("T01", "TRUCK 01", 8, 8000, "70-1122 กทม.", "SCG Logistics", "สมชาย ใจซื่อ", "081-234-5678", "6 ล้อตู้แห้ง"),
+            ("T02", "TRUCK 02", 8, 8000, "70-3344 กทม.", "Flash Express", "สมเกียรติ มั่นคง", "089-876-5432", "6 ล้อตู้แห้ง"),
+            ("T03", "TRUCK 03", 8, 8500, "71-5566 ชลบุรี", "Linfox Thailand", "อนุชา รวดเร็ว", "086-555-1234", "6 ล้อตู้ทึบ"),
+            ("T04", "TRUCK 04", 8, 8000, "70-7788 กทม.", "DOCKFLOW Fleet", "วิชัย ส่งมอบ", "082-444-9988", "6 ล้อตู้แห้ง"),
+            ("T05", "TRUCK 05", 8, 8500, "72-9900 นนทบุรี", "Kerry Logistics", "ธีระ ขยันยิ่ง", "085-111-2233", "6 ล้อตู้แห้ง"),
+            ("T06", "TRUCK 06", 4, 3500, "1ฒผ-4455 กทม.", "DOCKFLOW Fleet", "บุญรอด ขับปลอดภัย", "083-777-6655", "4 ล้อตู้ทึบ"),
+            ("T07", "TRUCK 07", 12, 15000, "73-1234 สระบุรี", "SCG Logistics", "ประสิทธิ์ ชำนาญทาง", "087-999-0011", "10 ล้อตู้ทึบ"),
+            ("T08", "TRUCK 08", 8, 8000, "70-6677 ปทุมธานี", "รถร่วมบริการ", "มานะ ตรงเวลา", "084-222-3344", "6 ล้อตู้แห้ง"),
         ]
         conn.executemany("INSERT INTO trucks VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", trucks_data)
 
@@ -519,15 +532,21 @@ def draw_truck_graphic(trip_id, title_label="TRUCK VIEW"):
     # Cabin (Head)
     ax.add_patch(FancyBboxPatch((1.2, 0.4), 3.6, 1.2, boxstyle="round,pad=0.1", facecolor="#4F46E5", edgecolor="#3730A3"))
     ax.text(3, 1.0, "หัวรถบรรทุก (CABIN)", ha="center", va="center", fontsize=9, color="white", fontweight="bold")
-    ax.text(3, 0.65, f"พิกัดรับน้ำหนัก: {t_data.get('max_weight', 3000):,.0f} kg", ha="center", va="center", fontsize=7, color="#E0E7FF")
+    ax.text(3, 0.65, f"พิกัดรับน้ำหนัก: {t_data.get('max_weight', 8000):,.0f} kg", ha="center", va="center", fontsize=7.5, color="#E0E7FF", fontweight="bold")
 
     # Wheels
     for wx, wy in [(0.8, 1.0), (4.8, 1.0), (0.8, 6.5), (4.8, 6.5)]:
         ax.add_patch(Rectangle((wx, wy), 0.4, 1.0, facecolor="#334155", edgecolor="#0F172A"))
 
-    # Slots and Pallets grid inside truck
-    slots_total = t_data["slots"]
-    row_count = (slots_total + 1) // 2
+    # Slots and Pallets grid inside truck (Dynamic scaling for any truck size: 4, 6, 8, 12+ slots)
+    slots_total = max(1, t_data.get("slots", 8))
+    row_count = max(1, (slots_total + 1) // 2)
+    total_avail_h = 5.7
+    slot_h = min(0.95, (total_avail_h - (row_count - 1) * 0.12) / row_count)
+    row_pitch = slot_h + 0.12
+    start_sy = 7.7 - slot_h
+    font_main = 8.5 if row_count <= 4 else (7.5 if row_count <= 6 else 6.5)
+    font_sub = 7.0 if row_count <= 4 else (6.0 if row_count <= 6 else 5.5)
 
     for r in range(row_count):
         for c in range(2):
@@ -536,17 +555,17 @@ def draw_truck_graphic(trip_id, title_label="TRUCK VIEW"):
                 continue
 
             sx = 1.35 + c * 1.75
-            sy = 6.8 - (r * 1.15)
+            sy = start_sy - (r * row_pitch)
 
             item = slot_map.get(slot_idx)
             if item:
                 color = CATEGORY_COLOR.get(item["category"], "#0F766E")
-                ax.add_patch(FancyBboxPatch((sx, sy), 1.5, 0.95, boxstyle="round,pad=0.05", facecolor=color, edgecolor="#0F172A", linewidth=1.5))
-                ax.text(sx + 0.75, sy + 0.55, item["code"], ha="center", va="center", fontsize=9, color="white", fontweight="bold")
-                ax.text(sx + 0.75, sy + 0.22, f"{item['qty']} หน่วย", ha="center", va="center", fontsize=7, color="#E2E8F0")
+                ax.add_patch(FancyBboxPatch((sx, sy), 1.5, slot_h, boxstyle="round,pad=0.04", facecolor=color, edgecolor="#0F172A", linewidth=1.5))
+                ax.text(sx + 0.75, sy + slot_h * 0.60, item["code"], ha="center", va="center", fontsize=font_main, color="white", fontweight="bold")
+                ax.text(sx + 0.75, sy + slot_h * 0.25, f"{item['qty']} หน่วย", ha="center", va="center", fontsize=font_sub, color="#E2E8F0")
             else:
-                ax.add_patch(FancyBboxPatch((sx, sy), 1.5, 0.95, boxstyle="round,pad=0.05", facecolor="#FFFFFF", edgecolor="#CBD5E1", linestyle=":"))
-                ax.text(sx + 0.75, sy + 0.47, f"ช่อง {slot_idx:02}", ha="center", va="center", fontsize=8, color="#94A3B8")
+                ax.add_patch(FancyBboxPatch((sx, sy), 1.5, slot_h, boxstyle="round,pad=0.04", facecolor="#FFFFFF", edgecolor="#CBD5E1", linestyle=":"))
+                ax.text(sx + 0.75, sy + slot_h * 0.50, f"ช่อง {slot_idx:02}", ha="center", va="center", fontsize=font_main, color="#94A3B8")
 
     fig.tight_layout(pad=0.5)
     return fig
@@ -1144,7 +1163,7 @@ def delivery_note_dialog(trip_id):
     tot_pallets = len(items)
     tot_units = sum(it["qty"] for it in items)
     tot_wt = sum(it["weight"] for it in items)
-    max_truck_wt = trip.get("max_weight", 3000)
+    max_truck_wt = trip.get("max_weight") or 8000.0
     wt_pct = int((tot_wt / max(max_truck_wt, 1)) * 100)
     
     barcode_svg = generate_barcode_svg(trip["id"])
@@ -1494,20 +1513,25 @@ def control_tower_fragment():
                         t.set_fontweight("bold")
                     
                     ax_cat.legend(wedges, labels, loc="center left", bbox_to_anchor=(0.88, 0.5), fontsize=8.5, frameon=False)
-                    ax_cat.text(0, 0, "รวม\\n" + str(sum(sizes)) + " พาเลต", ha="center", va="center", fontsize=10, fontweight="bold", color="#1E293B")
+                    ax_cat.text(0, 0.11, "สต็อกรวม", ha="center", va="center", fontsize=9.5, color="#64748B", fontweight="bold")
+                    ax_cat.text(0, -0.13, f"{sum(sizes)} พาเลต", ha="center", va="center", fontsize=13, color="#0F172A", fontweight="bold")
                     fig_cat.tight_layout()
                     st.pyplot(fig_cat, use_container_width=True)
                     plt.close(fig_cat)
                     
-                    # 4 Symmetrical Category Badges Underneath
-                    m_cols = st.columns(len(cat_data))
-                    for idx, c in enumerate(cat_data):
-                        with m_cols[idx]:
+                    # 2x2 Symmetrical Category Badges Underneath
+                    c_row1 = st.columns(2)
+                    c_row2 = st.columns(2)
+                    tot_cat_cnt = max(sum(sizes), 1)
+                    for idx, c in enumerate(cat_data[:4]):
+                        target_col = c_row1[idx] if idx < 2 else c_row2[idx - 2]
+                        with target_col:
                             color_pill = CATEGORY_COLOR.get(c['category'], '#64748B')
+                            pct_cat = int((c['cnt'] / tot_cat_cnt) * 100)
                             st.markdown(
-                                f"""<div style="border-left: 3px solid {color_pill}; padding-left: 6px; background: #F8FAFC; border-radius: 4px; padding: 4px 6px;">
-                                    <div style="font-size: 10px; color: #64748B; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{c['category']}</div>
-                                    <strong style="font-size: 13px; color: #0F172A;">{c['cnt']} <span style="font-size: 10px; font-weight: normal;">พาเลต</span></strong>
+                                f"""<div style="border-left: 4px solid {color_pill}; padding: 6px 10px; background: #F8FAFC; border-radius: 6px; margin-bottom: 8px; min-height: 52px; display: flex; flex-direction: column; justify-content: center; box-sizing: border-box;">
+                                    <div style="font-size: 11px; color: #64748B; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500;">{c['category']}</div>
+                                    <strong style="font-size: 13.5px; color: #0F172A;">{c['cnt']} <span style="font-size: 11px; font-weight: normal; color: #64748B;">พาเลต ({pct_cat}%)</span></strong>
                                 </div>""",
                                 unsafe_allow_html=True
                             )
@@ -1552,20 +1576,47 @@ def control_tower_fragment():
                 st.pyplot(fig_wh, use_container_width=True)
                 plt.close(fig_wh)
                 
-                # 2 Symmetrical Summary Cards Underneath
-                w_col1, w_col2 = st.columns(2)
-                for idx, w in enumerate(wh_util):
-                    target_col = w_col1 if idx == 0 else w_col2
-                    with target_col:
-                        p_val = pcts[idx]
-                        p_color = "#3B82F6" if idx == 0 else "#8B5CF6"
-                        target_col.markdown(
-                            f"""<div style="border-left: 3px solid {p_color}; padding-left: 6px; background: #F8FAFC; border-radius: 4px; padding: 4px 8px;">
-                                <div style="font-size: 10px; color: #64748B;">คลัง {w['wh']} (ความจุ {w['cap']} ช่อง)</div>
-                                <strong style="font-size: 13px; color: #0F172A;">{w['used']} พาเลต <span style="font-size: 11px; color: {p_color};">({p_val}%)</span></strong>
-                            </div>""",
-                            unsafe_allow_html=True
-                        )
+                # 2x2 Symmetrical Warehouse Summary Underneath
+                tot_caps = sum(caps)
+                tot_used = sum(useds)
+                tot_free = max(0, tot_caps - tot_used)
+                free_pct = int((tot_free / max(tot_caps, 1)) * 100)
+
+                w_row1 = st.columns(2)
+                w_row2 = st.columns(2)
+
+                with w_row1[0]:
+                    st.markdown(
+                        f"""<div style="border-left: 4px solid #3B82F6; padding: 6px 10px; background: #F8FAFC; border-radius: 6px; margin-bottom: 8px; min-height: 52px; display: flex; flex-direction: column; justify-content: center; box-sizing: border-box;">
+                            <div style="font-size: 11px; color: #64748B; font-weight: 500;">คลัง WH-A (ความจุ {caps[0]} ช่อง)</div>
+                            <strong style="font-size: 13.5px; color: #0F172A;">{useds[0]} <span style="font-size: 11px; font-weight: normal; color: #3B82F6;">พาเลต ({pcts[0]}%)</span></strong>
+                        </div>""",
+                        unsafe_allow_html=True
+                    )
+                with w_row1[1]:
+                    st.markdown(
+                        f"""<div style="border-left: 4px solid #8B5CF6; padding: 6px 10px; background: #F8FAFC; border-radius: 6px; margin-bottom: 8px; min-height: 52px; display: flex; flex-direction: column; justify-content: center; box-sizing: border-box;">
+                            <div style="font-size: 11px; color: #64748B; font-weight: 500;">คลัง WH-B (ความจุ {caps[1]} ช่อง)</div>
+                            <strong style="font-size: 13.5px; color: #0F172A;">{useds[1]} <span style="font-size: 11px; font-weight: normal; color: #8B5CF6;">พาเลต ({pcts[1]}%)</span></strong>
+                        </div>""",
+                        unsafe_allow_html=True
+                    )
+                with w_row2[0]:
+                    st.markdown(
+                        f"""<div style="border-left: 4px solid #0EA5E9; padding: 6px 10px; background: #F8FAFC; border-radius: 6px; margin-bottom: 8px; min-height: 52px; display: flex; flex-direction: column; justify-content: center; box-sizing: border-box;">
+                            <div style="font-size: 11px; color: #64748B; font-weight: 500;">ความจุรวมคลังสินค้าทั้งหมด</div>
+                            <strong style="font-size: 13.5px; color: #0F172A;">{tot_caps} <span style="font-size: 11px; font-weight: normal; color: #64748B;">ช่องจัดเก็บ (2 คลัง)</span></strong>
+                        </div>""",
+                        unsafe_allow_html=True
+                    )
+                with w_row2[1]:
+                    st.markdown(
+                        f"""<div style="border-left: 4px solid #10B981; padding: 6px 10px; background: #F8FAFC; border-radius: 6px; margin-bottom: 8px; min-height: 52px; display: flex; flex-direction: column; justify-content: center; box-sizing: border-box;">
+                            <div style="font-size: 11px; color: #64748B; font-weight: 500;">พื้นที่ว่างพร้อมจัดเก็บ (Free Space)</div>
+                            <strong style="font-size: 13.5px; color: #0F172A;">{tot_free} <span style="font-size: 11px; font-weight: normal; color: #10B981;">ช่องว่าง ({free_pct}%)</span></strong>
+                        </div>""",
+                        unsafe_allow_html=True
+                    )
 
         # ============================================================
         # ROW 2: 2 SYMMETRIC 50% / 50% OPERATIONAL METRIC CARDS
@@ -2016,14 +2067,15 @@ def page_dock_yard():
                         new_id = st.text_input("รหัสรถ (Truck ID)*:", placeholder="เช่น T09, T10").strip().upper()
                         new_name = st.text_input("ชื่อเรียก / รุ่นรถ*:", placeholder="เช่น Isuzu Giga 360")
                         new_plate = st.text_input("ป้ายทะเบียน*:", placeholder="เช่น 71-9988 กทม.")
-                        new_type = st.selectbox("ประเภทรถ:", ["รถบรรทุก 10 ล้อ", "รถบรรทุก 6 ล้อตู้ทึบ", "รถกระบะ 4 ล้อตู้ทึบ", "รถพ่วงเทรลเลอร์ 18 ล้อ"])
+                        new_type = st.selectbox("ประเภทรถ:", ["6 ล้อตู้แห้ง", "6 ล้อตู้ทึบ", "4 ล้อตู้ทึบ", "10 ล้อตู้ทึบ", "รถพ่วงเทรลเลอร์ 18 ล้อ"])
                     with c_a2:
                         new_carrier = st.text_input("บริษัทขนส่ง / เจ้าของรถ*:", placeholder="เช่น SCG Logistics, Fleet ประจำคลัง")
                         new_driver = st.text_input("ชื่อพนักงานขับรถ*:", placeholder="เช่น สมชาย ใจมั่น")
                         new_phone = st.text_input("เบอร์โทรศัพท์ติดต่อ:", placeholder="เช่น 089-123-4567")
                         c_s1, c_s2 = st.columns(2)
-                        new_slots = c_s1.number_input("ความจุพาเลต:", min_value=1, max_value=24, value=6)
-                        new_max_w = c_s2.number_input("รับน้ำหนักสูงสุด (กก.):", min_value=500.0, max_value=50000.0, value=12000.0, step=500.0)
+                        new_slots = c_s1.number_input("ความจุพาเลต:", min_value=1, max_value=24, value=8)
+                        new_max_w = c_s2.number_input("รับน้ำหนักสูงสุด (กก.):", min_value=500.0, max_value=50000.0, value=8000.0, step=500.0)
+                    st.caption("💡 **เกณฑ์มาตรฐาน:** 4 ล้อตู้ทึบ (4 ช่อง / 3,500 kg) · 6 ล้อ (8 ช่อง / 8,000-8,500 kg) · 10 ล้อ (12 ช่อง / 15,000 kg) · เทรลเลอร์ 18 ล้อ (22 ช่อง / 28,000 kg)")
 
                     submit_add = st.form_submit_button("บันทึกลงทะเบียนรถใหม่", type="primary", use_container_width=True)
                     if submit_add:
@@ -2067,8 +2119,8 @@ def page_dock_yard():
                     with e_c1:
                         edit_name = st.text_input("ชื่อเรียก / รุ่นรถ:", value=target_t["name"])
                         edit_plate = st.text_input("ป้ายทะเบียน:", value=target_t.get("plate") or "")
+                        types_list = ["6 ล้อตู้แห้ง", "6 ล้อตู้ทึบ", "4 ล้อตู้ทึบ", "10 ล้อตู้ทึบ", "รถพ่วงเทรลเลอร์ 18 ล้อ"]
                         type_idx = 0
-                        types_list = ["รถบรรทุก 10 ล้อ", "รถบรรทุก 6 ล้อตู้ทึบ", "รถกระบะ 4 ล้อตู้ทึบ", "รถพ่วงเทรลเลอร์ 18 ล้อ"]
                         if target_t.get("truck_type") in types_list:
                             type_idx = types_list.index(target_t["truck_type"])
                         edit_type = st.selectbox("ประเภทรถ:", types_list, index=type_idx)
@@ -2079,6 +2131,7 @@ def page_dock_yard():
                         e_s1, e_s2 = st.columns(2)
                         edit_slots = e_s1.number_input("ความจุพาเลต:", min_value=1, max_value=24, value=int(target_t["slots"]))
                         edit_max_w = e_s2.number_input("รับน้ำหนักสูงสุด (กก.):", min_value=500.0, max_value=50000.0, value=float(target_t["max_weight"]), step=500.0)
+                    st.caption(f"💡 สามารถแก้ไขความจุพาเลตและพิกัดน้ำหนักสูงสุดของรถ `{target_t['id']}` ได้ตามจริง")
 
                     b1, b2 = st.columns(2)
                     with b1:
