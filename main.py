@@ -2468,9 +2468,37 @@ def page_warehouse():
                         t.set_color("white")
                         t.set_fontweight("bold")
                     ax_abc.legend(wedges, abc_labels, loc="center left", bbox_to_anchor=(0.85, 0.5), fontsize=8.5, frameon=False)
-                    ax_abc.text(0, 0, f"{sum(abc_counts)}\\nพาเลต", ha="center", va="center", fontsize=10, fontweight="bold", color="#1E293B")
+                    ax_abc.text(0, 0.11, "สต็อกคลัง", ha="center", va="center", fontsize=9.5, color="#64748B", fontweight="bold")
+                    ax_abc.text(0, -0.13, f"{sum(abc_counts)} พาเลต", ha="center", va="center", fontsize=12.5, color="#0F172A", fontweight="bold")
                     fig_abc.tight_layout()
                     st.pyplot(fig_abc, use_container_width=True)
+                    
+                    # 3 Symmetrical Class Badges Underneath
+                    m1, m2, m3 = st.columns(3)
+                    with m1:
+                        st.markdown(
+                            f"""<div style="border-left: 3px solid #059669; padding: 4px 8px; background: #F8FAFC; border-radius: 4px;">
+                                <div style="font-size: 10px; color: #64748B;">Class A (เร็ว)</div>
+                                <strong style="font-size: 13px; color: #0F172A;">{a_cnt} <span style="font-size: 10px; font-weight: normal; color: #64748B;">พาเลต</span></strong>
+                            </div>""",
+                            unsafe_allow_html=True
+                        )
+                    with m2:
+                        st.markdown(
+                            f"""<div style="border-left: 3px solid #2563EB; padding: 4px 8px; background: #F8FAFC; border-radius: 4px;">
+                                <div style="font-size: 10px; color: #64748B;">Class B (กลาง)</div>
+                                <strong style="font-size: 13px; color: #0F172A;">{b_cnt} <span style="font-size: 10px; font-weight: normal; color: #64748B;">พาเลต</span></strong>
+                            </div>""",
+                            unsafe_allow_html=True
+                        )
+                    with m3:
+                        st.markdown(
+                            f"""<div style="border-left: 3px solid #64748B; padding: 4px 8px; background: #F8FAFC; border-radius: 4px;">
+                                <div style="font-size: 10px; color: #64748B;">Class C (ช้า)</div>
+                                <strong style="font-size: 13px; color: #0F172A;">{c_cnt} <span style="font-size: 10px; font-weight: normal; color: #64748B;">พาเลต</span></strong>
+                            </div>""",
+                            unsafe_allow_html=True
+                        )
                 else:
                     st.info("ไม่มีข้อมูลสินค้าในคลังนี้")
                 plt.close(fig_abc)
