@@ -3178,8 +3178,8 @@ def check_login():
                 st.caption("ระบบรักษาความปลอดภัย: ตรวจสอบสิทธิ์ด้วยตรรกะโครงสร้างเงื่อนไข (if-else)")
 
                 with st.form("login_form", clear_on_submit=False):
-                    username = st.text_input("👤 ชื่อผู้ใช้งาน (Username)", placeholder="เช่น admin")
-                    password = st.text_input("🔑 รหัสผ่าน (Password)", type="password", placeholder="เช่น 1234")
+                    username = st.text_input("👤 ชื่อผู้ใช้งาน (Username)")
+                    password = st.text_input("🔑 รหัสผ่าน (Password)", type="password")
                     submit_login = st.form_submit_button("เข้าสู่ระบบ (Sign In)", use_container_width=True, type="primary")
 
                     if submit_login:
@@ -3196,17 +3196,6 @@ def check_login():
                                 st.error("❌ รหัสผ่านไม่ถูกต้อง (Incorrect password)")
                         else:
                             st.error("❌ ไม่พบชื่อผู้ใช้นี้ในระบบ (Username not found)")
-
-                st.markdown(
-                    """
-                    <div style='background-color:#F8FAFC; border: 1px dashed #CBD5E1; padding:12px; border-radius:8px; font-size:12px; color:#475569; margin-top:10px;'>
-                        <b>📌 ข้อมูลบัญชีสำหรับทดสอบ (Demo Credentials):</b><br>
-                        • <b>Username:</b> <code>admin</code><br>
-                        • <b>Password:</b> <code>1234</code>
-                    </div>
-                    """,
-                    unsafe_allow_html=True,
-                )
         st.stop()
 
 
