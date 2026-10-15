@@ -3153,15 +3153,78 @@ def page_activity():
 
 
 # =========================================================
-# 7. MAIN CONTROLLER & SIDEBAR
+# 7. AUTHENTICATION & LOGIN (Python Conditionals: if-else)
+# =========================================================
+
+def check_login():
+    """
+    ระบบตรวจสอบสิทธิ์เข้าใช้งาน (Authentication System)
+    ประยุกต์ใช้ตรรกะพื้นฐานภาษา Python: Nested if-else conditionals
+    และ Streamlit Session State ร่วมกับ st.form
+    """
+    if "logged_in" not in st.session_state:
+        st.session_state.logged_in = False
+        st.session_state.user = ""
+
+    if not st.session_state.logged_in:
+        col_pad1, col_box, col_pad2 = st.columns([1, 2, 1])
+        with col_box:
+            st.markdown("<br>", unsafe_allow_html=True)
+            with st.container(border=True):
+                st.markdown("<h2 style='text-align: center; margin-bottom: 2px;'>🚚 DOCKFLOW WMS</h2>", unsafe_allow_html=True)
+                st.markdown("<p style='text-align: center; color: #64748B; font-size: 14px;'>Smart Warehouse & Yard Management System</p>", unsafe_allow_html=True)
+                st.divider()
+                st.subheader("🔐 เข้าสู่ระบบ (System Login)")
+                st.caption("ระบบรักษาความปลอดภัย: ตรวจสอบสิทธิ์ด้วยตรรกะโครงสร้างเงื่อนไข (if-else)")
+
+                with st.form("login_form", clear_on_submit=False):
+                    username = st.text_input("👤 ชื่อผู้ใช้งาน (Username)", placeholder="เช่น admin")
+                    password = st.text_input("🔑 รหัสผ่าน (Password)", type="password", placeholder="เช่น 1234")
+                    submit_login = st.form_submit_button("เข้าสู่ระบบ (Sign In)", use_container_width=True, type="primary")
+
+                    if submit_login:
+                        # ---------------------------------------------------------
+                        # ตรรกะ Python จากบทเรียน: Nested if-else Statement
+                        # ---------------------------------------------------------
+                        if username == "admin":
+                            if password == "1234":
+                                st.session_state.logged_in = True
+                                st.session_state.user = username
+                                st.success("✅ ยืนยันตัวตนสำเร็จ กำลังนำเข้าสู่ระบบ...")
+                                st.rerun()
+                            else:
+                                st.error("❌ รหัสผ่านไม่ถูกต้อง (Incorrect password)")
+                        else:
+                            st.error("❌ ไม่พบชื่อผู้ใช้นี้ในระบบ (Username not found)")
+
+                st.markdown(
+                    """
+                    <div style='background-color:#F8FAFC; border: 1px dashed #CBD5E1; padding:12px; border-radius:8px; font-size:12px; color:#475569; margin-top:10px;'>
+                        <b>📌 ข้อมูลบัญชีสำหรับทดสอบ (Demo Credentials):</b><br>
+                        • <b>Username:</b> <code>admin</code><br>
+                        • <b>Password:</b> <code>1234</code>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
+        st.stop()
+
+
+# =========================================================
+# 8. MAIN CONTROLLER & SIDEBAR
 # =========================================================
 
 initialize_database()
+check_login()
 
 with st.sidebar:
     st.markdown("## 🚚 DOCKFLOW WMS")
     st.caption("ระบบบริหารจัดการคลังสินค้าและลานเทียบท่า")
-    st.markdown("🟢 **สถานะ:** ออนไลน์พร้อมใช้งาน")
+    st.markdown(f"🟢 **สถานะ:** ออนไลน์ | 👤 **ผู้ใช้:** `{st.session_state.get('user', 'admin')}`")
+    if st.button("🚪 ออกจากระบบ (Logout)", use_container_width=True):
+        st.session_state.logged_in = False
+        st.session_state.user = ""
+        st.rerun()
     st.divider()
 
     # 1. Live Snapshot Container
