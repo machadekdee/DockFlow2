@@ -6,3 +6,5 @@ venv/
 env/
 .DS_Store
 .streamlit/secrets.toml
+backup_before_pull/
+dockflow.db
